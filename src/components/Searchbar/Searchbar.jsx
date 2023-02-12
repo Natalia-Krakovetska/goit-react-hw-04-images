@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
@@ -11,35 +11,28 @@ import {
 } from './Searchbar.styled';
 
 
-export class SearchBar extends Component {
-    static propTypes = {
-        onSubmit: PropTypes.func.isRequired,
-      };
-
-    state = {
-      searchValue: "",
-    }
-    
-    handleChange = event => {
-        const { name, value } = event.target;
-        this.setState({ [name]: value.toLowerCase() });
-
-      };
 
 
-      handleSubmit = event => {
+export const SearchBar =(onSubmit)=>{
+  const [searchValue, setSearchValue]= useState("");
+   const handleChange = event => {
+    const { value } = event.target;
+    setSearchValue(value.toLowerCase());
+  };
+
+
+  const handleSubmit = event => {
         event.preventDefault();
-        if (this.state.searchValue.trim() === '') {
+        if (searchValue.trim() === '') {
           return toast('Please enter keyword for image search');
         }
-        this.props.onSubmit(this.state.searchValue);
-        this.setState({ searchValue: '' });
+        onSubmit(searchValue);
+        setSearchValue("");
       };
-
-  render() {
-    return (
+      
+return (
       <SearchbarWrapper >
-        <SearchForm onSubmit={this.handleSubmit}>
+        <SearchForm onSubmit={handleSubmit}>
           <SearchFormButton type="submit">
           <BsSearch fill="blue" />
           </SearchFormButton>
@@ -51,11 +44,14 @@ export class SearchBar extends Component {
             autoComplete="off"
             autoFocus
             placeholder="Search images and photos"
-            value={this.state.searchValue}
-            onChange={this.handleChange}
+            value={searchValue}
+            onChange={handleChange}
           />
         </SearchForm>
       </SearchbarWrapper>
     );
-  }
 }
+
+SearchBar.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+};

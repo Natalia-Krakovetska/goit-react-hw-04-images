@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
 import { SearchBar } from "./Searchbar/Searchbar";
@@ -9,79 +9,78 @@ import { Button } from "./Button/Button";
 import { Loader } from "./Loader/Loader";
 import { AppWrapper } from "./App.styled";
 
-export class App extends Component {
-  state= {
-    searchValue: '',
-    largeImgUrl: '',
-    images: [],
-    isloading: false,
-    error: null,
-    page: 1,
-    showLoadMoreBtn: false,
-  }
 
-  async componentDidUpdate(_, prevState) {
-  const { searchValue, page } = this.state;
-  if (prevState.searchValue !== searchValue || prevState.page !== page) {
-    try {
-      this.setState({ isloading: true, error: null });
-      const data = await fetchImages(searchValue, page);
-      if (!data.totalHits) {
-        this.setState({ showLoadMoreBtn: false });
-         return toast.error('Sorry, there are no images matching your search query. Please try again.', {
-            icon: false
-          });
-      }
-      toast(`Hooray! We found ${[data.totalHits]} images.`);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...data.hits],
-        showLoadMoreBtn: page < Math.ceil(data.totalHits / 12),
-      }));
-    } catch (error) {
-      this.setState({ error: 'Error' });
-    } finally {
-      this.setState({ isloading: false });
-    }
-  }
+
+export const App =()=> {
+const [searchValue, setSearchValue] = useState("");
+const [largeImgUrl, setLargeImgUrl] = useState("");
+const [images, setImages] = useState([]);
+const [isloading, setIsloading] = useState(false);
+const [error, setError] = useState(null);
+const [page, setPage] = useState(1);
+const [showLoadMoreBtn, setShowLoadMoreBtn] = useState(false);
+
+const addName = searchValue => {
+  setSearchValue(searchValue);
+  setPage(1);
+  setImages([]); 
+};
+
+const LargeImgUrl = url => {
+  setLargeImgUrl(url);
+};
+
+const onModalClose = () => {
+  setLargeImgUrl("");
+};
+
+const loadMore = () => {
+  setPage(prevPage => prevPage + 1);
 };
 
 
+useEffect(() => {
+  if (searchValue === '') {
+    return;
+  }
+  async function fetchImage() {
+    try {
+      setIsloading(true);
+      setError(null);
+      const data = await fetchImages(searchValue, page);
+      if (!data.totalHits) {
+        return toast.error(
+          'Sorry, there are no images matching your search query. Please try again.'
+        );
+      } else {
+        setImages(prevImages => [...prevImages, ...data.hits]);
+        setShowLoadMoreBtn(page < Math.ceil(data.totalHits / 12));
 
-  addName = searchValue => {
-    this.setState({ searchValue, page: 1, images: [] });
-  };
-  setLargeImgUrl = url => {
-    this.setState({ largeImgUrl: url });
-  };
+        if (page === 1) {
+          toast.success(`Hooray! We found ${[data.totalHits]} images.`);
+        }
+      }
+    } catch (error) {
+      setError('Error');
+    } finally {
+      setIsloading(false);
+    }
+  }
+  fetchImage();
+}, [searchValue, page]);
 
-  onModalClose = () => {
-    this.setState({ largeImgUrl: '' });
-  };
-
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
-
-
-
-  render() { 
-    const { images, error, isloading, largeImgUrl, showLoadMoreBtn } =
-    this.state;
-  return (
+return (
   <AppWrapper>
-      <SearchBar onSubmit={this.addName}/>
+      <SearchBar onSubmit={addName}/>
       {images.length > 0 && (
-          <ImageGallery images={images} setLargeImgUrl={this.setLargeImgUrl} />
+          <ImageGallery images={images} setLargeImgUrl={LargeImgUrl} />
         )}
         {isloading && <Loader />}
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        {largeImgUrl && <Modal img={largeImgUrl} onClose={this.onModalClose} />}
-        {showLoadMoreBtn && <Button onClick={this.loadMore} />}
+        {largeImgUrl && <Modal img={largeImgUrl} onClose={onModalClose} />}
+        {showLoadMoreBtn && <Button onClick={loadMore} />}
         <ToastContainer autoClose={2000} pauseOnHover closeOnClick/>
   </AppWrapper>
   );
-  }
-}
 
+}
